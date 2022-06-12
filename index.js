@@ -1,12 +1,13 @@
 const express = require('express')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require('mongodb')
 const app = express()
-const cors = require('cors')
+const cors = require('cors');
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
 // middleware
 app.use(cors())
+app.use(express.json())
 
 // Connection uri
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6jlv6.mongodb.net/?retryWrites=true&w=majority`;
@@ -16,10 +17,20 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 async function run() {
     try {
         await client.connect();
-    }
+        const database = client.db("doctors_portal");
+        const appointmentsCollection = database.collection("appointments");
 
+        // send appointment info to the server
+        app.post('/appointments', async (req, res) => {
+            const appointment = req.body;
+            const result = await appointmentsCollection.insertOne(appointment);
+            res.send(result);
+        })
+
+        
+    }
     finally {
-        await client.close();
+        // await client.close();
     }
 
 }
