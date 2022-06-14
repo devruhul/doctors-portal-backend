@@ -19,6 +19,7 @@ async function run() {
         await client.connect();
         const database = client.db("doctors_portal");
         const appointmentsCollection = database.collection("appointments");
+        const portalUsersCollection = database.collection('users')
 
         // get appointments information
         app.get('/appointments', async (req, res) => {
@@ -34,6 +35,14 @@ async function run() {
             const appointment = req.body;
             const result = await appointmentsCollection.insertOne(appointment);
             res.send(result);
+        })
+
+        // save portal user to the database
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await portalUsersCollection.insertOne(user);
+            console.log(result);
+            res.json(result);
         })
     }
     finally {
