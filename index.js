@@ -44,6 +44,15 @@ async function run() {
             console.log(result);
             res.json(result);
         })
+
+        // uodate user if not existed
+        app.put('/users', async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email };
+            const result = await portalUsersCollection.updateOne(query, { $set: user }, { upsert: true });
+            console.log(result);
+            res.json(result);
+        })
     }
     finally {
         // await client.close();
