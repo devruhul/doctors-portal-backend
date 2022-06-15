@@ -37,11 +37,22 @@ async function run() {
             res.send(result);
         })
 
+        // check if user is admin or not
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const user = await portalUsersCollection.findOne(query);
+            let isAdmin = false;
+            if (user?.role === 'admin') {
+                isAdmin = true;
+            }
+            res.json({ admin: isAdmin });
+        })
+
         // save portal user to the database
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await portalUsersCollection.insertOne(user);
-            console.log(result);
             res.json(result);
         })
 
@@ -50,7 +61,6 @@ async function run() {
             const user = req.body;
             const query = { email: user.email };
             const result = await portalUsersCollection.updateOne(query, { $set: user }, { upsert: true });
-            console.log(result);
             res.json(result);
         })
 
