@@ -53,6 +53,15 @@ async function run() {
             console.log(result);
             res.json(result);
         })
+
+        // add admin roll to user
+        app.put('/users/makeAdmin', async (req, res) => {
+            const user = req.body;
+            const filter = { email: user.email };
+            const result = await portalUsersCollection.updateOne(filter, { $set: { role: 'admin' } });
+            res.json(result);
+        })
+
     }
     finally {
         // await client.close();
