@@ -2,9 +2,16 @@ const express = require('express')
 const { MongoClient, ServerApiVersion } = require('mongodb')
 const app = express()
 const cors = require('cors');
+const admin = require("firebase-admin");
 require('dotenv').config()
 const port = process.env.PORT || 5000
 
+
+const serviceAccount = require("./doctors-portal-firebase-adminsdk.json");
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
 // middleware
 app.use(cors())
 app.use(express.json())
@@ -13,6 +20,24 @@ app.use(express.json())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6jlv6.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
+async function verifyToken(req, res, next) {
+    if (req.headers?.authorization?.startsWith('Bearer ')) {
+        const idToken = req.headers.authorization.split('Bearer ')[1];
+        try {
+            const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+            req.decodedEmail = decodedIdToken.email;
+        }
+        catch (error) {
+            console.error("Error while verifying token:", error);
+            res.status(403).send("Unauthorized");
+        }
+    }
+    next()
+}
+
+
 
 async function run() {
     try {
@@ -65,11 +90,21 @@ async function run() {
         })
 
         // add admin roll to user
-        app.put('/users/makeAdmin', async (req, res) => {
+        app.put('/users/makeAdmin', verifyToken, async (req, res) => {
             const user = req.body;
-            const filter = { email: user.email };
-            const result = await portalUsersCollection.updateOne(filter, { $set: { role: 'admin' } });
-            res.json(result);
+            const requester = req.decodedEmail
+            if (requester) {
+                const requesterAccount = await portalUsersCollection.findOne({ email: requester });
+                if (requesterAccount?.role === 'admin') {
+
+                    const filter = { email: user.email };
+                    const result = await portalUsersCollection.updateOne(filter, { $set: { role: 'admin' } });
+                    res.json(result);
+                }
+            }
+            else {
+                res.status(403).json({message: 'Unauthorized'});
+            }
         })
 
     }
