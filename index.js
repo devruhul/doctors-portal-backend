@@ -115,11 +115,9 @@ async function run() {
     finally {
         // await client.close();
     }
-
 }
 
 run().catch(console.dir);
-
 
 app.get('/', (req, res) => {
     res.send('Hello dcotors portal!')
