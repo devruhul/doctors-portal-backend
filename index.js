@@ -1,18 +1,20 @@
 const express = require('express')
 const app = express()
+require('dotenv').config()
 const admin = require("firebase-admin");
 const cors = require('cors');
-require('dotenv').config()
 const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb')
+const { MongoClient, ServerApiVersion } = require('mongodb');
 
-const serviceAccount = require("./doctors-portal-firebase-adminsdk.json")
-console.log(serviceAccount);
-
+// initialize firebase admin
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL, 
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
+    }),
+    databaseURL: process.env.FIREBASE_DATABASE_URL
 });
-
 
 // middleware
 app.use(cors())
