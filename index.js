@@ -10,8 +10,8 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 admin.initializeApp({
     credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL, 
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
     }),
     databaseURL: process.env.FIREBASE_DATABASE_URL
 });
@@ -53,7 +53,7 @@ async function run() {
         // get appointments information
         app.get('/appointments', async (req, res) => {
             const email = req.query.email;
-            const date = new Date(req.query.date).toLocaleDateString();
+            const date = req.query.date;
             const query = { email: email, date: date };
             const appointments = await appointmentsCollection.find(query).toArray();
             res.json(appointments);
@@ -107,7 +107,7 @@ async function run() {
                 }
             }
             else {
-                res.status(403).json({message: 'Unauthorized'});
+                res.status(403).json({ message: 'Unauthorized' });
             }
         })
 
