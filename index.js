@@ -25,7 +25,6 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-
 async function verifyToken(req, res, next) {
     if (req.headers?.authorization?.startsWith('Bearer ')) {
         const idToken = req.headers.authorization.split('Bearer ')[1];
@@ -40,8 +39,6 @@ async function verifyToken(req, res, next) {
     }
     next()
 }
-
-
 
 async function run() {
     try {
@@ -110,7 +107,6 @@ async function run() {
                 res.status(403).json({ message: 'Unauthorized' });
             }
         })
-
     }
     finally {
         // await client.close();
