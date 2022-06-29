@@ -25,6 +25,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+// Verify token
 async function verifyToken(req, res, next) {
     if (req.headers?.authorization?.startsWith('Bearer ')) {
         const idToken = req.headers.authorization.split('Bearer ')[1];
@@ -115,10 +116,12 @@ async function run() {
 
 run().catch(console.dir);
 
+// Server root get request
 app.get('/', (req, res) => {
     res.send('Hello doctors portal!')
 })
 
+// Listening the server
 app.listen(port, () => {
     console.log(`Doctors portal listening on port ${port}`)
 })
