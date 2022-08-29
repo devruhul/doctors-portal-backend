@@ -4,7 +4,9 @@ require('dotenv').config()
 const admin = require("firebase-admin");
 const cors = require('cors');
 const port = process.env.PORT || 5000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
 // initialize firebase admin
 admin.initializeApp({
@@ -24,6 +26,8 @@ app.use(express.json())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6jlv6.mongodb.net/?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+
 
 // Verify token
 async function verifyToken(req, res, next) {
@@ -48,6 +52,13 @@ async function run() {
         const appointmentsCollection = database.collection("appointments");
         const portalUsersCollection = database.collection('users')
 
+        // send appointment info to the server
+        app.post('/appointments', async (req, res) => {
+            const appointment = req.body;
+            const result = await appointmentsCollection.insertOne(appointment);
+            res.send(result);
+        })
+
         // get appointments information
         app.get('/appointments', async (req, res) => {
             const email = req.query.email;
@@ -57,13 +68,27 @@ async function run() {
             res.json(appointments);
         })
 
-        // send appointment info to the server
-        app.post('/appointments', async (req, res) => {
-            const appointment = req.body;
-            const result = await appointmentsCollection.insertOne(appointment);
-            res.send(result);
+        // get all appointments by id
+        app.get('/appointments/:id', async (req, res) => {
+            const id = req.params.id;
+            const appointment = await appointmentsCollection.findOne({ _id: ObjectId(id) });
+            res.json(appointment);
         })
 
+        // update appointment by id
+        app.put('/appointments/:id', async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    payment: payment
+                }
+            };
+            const result = await appointmentsCollection.updateOne(filter, updateDoc);
+            res.json(result);
+        });
+        
         // check if user is admin or not
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
@@ -108,7 +133,24 @@ async function run() {
                 res.status(403).json({ message: 'Unauthorized' });
             }
         })
+
+        // stripe payment
+        app.post("/create-payment-intent", async (req, res) => {
+            const paymentInfo = req.body;
+            const amount = paymentInfo.price * 100
+
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"]
+            });
+
+            res.json({ clientSecret: paymentIntent.client_secret });
+        });
+
     }
+
     finally {
         // await client.close();
     }
