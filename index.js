@@ -5,6 +5,7 @@ const admin = require("firebase-admin");
 const cors = require('cors');
 const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const fileUpload = require('express-fileupload');
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
 
@@ -21,6 +22,7 @@ admin.initializeApp({
 // middleware
 app.use(cors())
 app.use(express.json())
+app.use(fileUpload());
 
 // Connection uri
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6jlv6.mongodb.net/?retryWrites=true&w=majority`;
@@ -51,6 +53,7 @@ async function run() {
         const database = client.db("doctors_portal");
         const appointmentsCollection = database.collection("appointments");
         const portalUsersCollection = database.collection('users')
+        const doctorsCollection = database.collection('doctors')
 
         // send appointment info to the server
         app.post('/appointments', async (req, res) => {
@@ -88,7 +91,30 @@ async function run() {
             const result = await appointmentsCollection.updateOne(filter, updateDoc);
             res.json(result);
         });
-        
+
+        // send doctor image to database
+        app.post('/doctors', async (req, res) => {
+            const doctorName = req.body.doctorName
+            const doctorEmail = req.body.email
+            const doctorImage = req.files.doctorImage
+            const doctorImageData = doctorImage.data
+            const encodedPic = doctorImageData.toString('base64')
+            const imageBuffer = Buffer.from(encodedPic, 'base64')
+            const doctor = {
+                doctorName: doctorName,
+                doctorEmail: doctorEmail,
+                doctorImage: imageBuffer
+            }
+            const result = await doctorsCollection.insertOne(doctor);
+            res.json(result);
+        })
+
+        // get all doctors
+        app.get('/doctors', async (req, res) => {
+            const doctors = await doctorsCollection.find().toArray();
+            res.json(doctors);
+        })
+
         // check if user is admin or not
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
