@@ -2,12 +2,12 @@ const express = require('express')
 const app = express()
 require('dotenv').config()
 const admin = require("firebase-admin");
-const cors = require('cors');
-const port = process.env.PORT || 5000
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const fileUpload = require('express-fileupload');
-
+const port = process.env.PORT || 5000
 const stripe = require('stripe')(process.env.STRIPE_SECRET);
+const fileUpload = require('express-fileupload');
+const cors = require('cors');
+
 
 // initialize firebase admin
 admin.initializeApp({
@@ -59,7 +59,7 @@ async function run() {
         app.post('/appointments', async (req, res) => {
             const appointment = req.body;
             const result = await appointmentsCollection.insertOne(appointment);
-            res.send(result);
+            res.json(result);
         })
 
         // get appointments information
